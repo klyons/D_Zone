@@ -1,0 +1,109 @@
+.crt-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: #030308;
+  font-family: 'Courier New', Courier, monospace;
+  overflow: hidden;
+  color: #33ff33;
+}
+
+.crt-bezel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  max-height: 800px;
+  background: #111115;
+  border-radius: 20px;
+  padding: 15px;
+  box-shadow: 
+    0 0 0 8px #22222b,
+    inset 0 0 15px rgba(0, 0, 0, 0.9),
+    0 20px 40px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+}
+
+.crt-screen-wrapper {
+  position: relative;
+  flex: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #020205;
+  border: 4px solid #08080a;
+}
+
+.crt-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: textShadow 1.6s infinite alternate;
+}
+
+/* CRT Scanlines Effect */
+.crt-scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Subtle Screen Flicker */
+.crt-flicker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(18, 16, 16, 0.05);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 101;
+  animation: flicker 0.15s infinite;
+}
+
+/* Screen Vignette Shadow */
+.crt-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  z-index: 102;
+}
+
+@keyframes flicker {
+  0% { opacity: 0.08; }
+  50% { opacity: 0.05; }
+  100% { opacity: 0.07; }
+}
+
+@keyframes textShadow {
+  0% {
+    text-shadow: 0.5px 0 0 rgba(255,0,0,0.5), -0.5px 0 0 rgba(0,255,255,0.5);
+  }
+  100% {
+    text-shadow: -0.5px 0 0 rgba(255,0,0,0.5), 0.5px 0 0 rgba(0,255,255,0.5);
+  }
+}

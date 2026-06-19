@@ -1,0 +1,137 @@
+.game-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #05050c;
+}
+
+.game-canvas {
+  background-color: #0a0a14;
+  border: 2px solid #005577;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0, 85, 119, 0.4);
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* Overlay Screen (Round Over / Game Over) */
+.overlay-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 5, 12, 0.93);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.overlay-title {
+  font-size: 44px;
+  letter-spacing: 6px;
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-weight: 900;
+}
+
+.glowing-red {
+  color: #ff3366;
+  text-shadow: 0 0 10px #ff3366, 0 0 25px rgba(255, 51, 102, 0.4);
+}
+
+.glowing-cyan {
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff, 0 0 25px rgba(0, 255, 255, 0.4);
+}
+
+.overlay-content {
+  width: 100%;
+  max-width: 650px;
+  text-align: center;
+  margin-bottom: 30px;
+  background: rgba(15, 15, 30, 0.6);
+  border: 1.5px solid #005577;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: inset 0 0 10px rgba(0, 85, 119, 0.15);
+}
+
+.winner-announcement,
+.champion-announcement {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-shadow: 0 0 8px currentColor;
+}
+
+.reward-text {
+  font-size: 11px;
+  color: #33ff33;
+  letter-spacing: 1px;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.final-score {
+  font-size: 13px;
+  color: #88ccff;
+  letter-spacing: 1px;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* Scoreboard Table */
+.scoreboard {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.scoreboard th {
+  font-size: 11px;
+  color: #88ccff;
+  border-bottom: 2px solid #005577;
+  padding: 8px;
+  text-align: left;
+  letter-spacing: 1px;
+}
+
+.scoreboard td {
+  font-size: 12px;
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.continue-btn {
+  background: #ff6600;
+  color: #000;
+  border: none;
+  padding: 12px 40px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  letter-spacing: 2px;
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+  transition: all 0.2s;
+  max-width: 300px;
+}
+
+.continue-btn:hover {
+  background: #ff8533;
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.6);
+  transform: translateY(-2px);
+}
