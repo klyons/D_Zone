@@ -13,9 +13,11 @@
   border: 2px solid #005577;
   border-radius: 4px;
   box-shadow: 0 0 20px rgba(0, 85, 119, 0.4);
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
+  image-rendering: auto;
 }
 
 /* Overlay Screen (Round Over / Game Over) */
