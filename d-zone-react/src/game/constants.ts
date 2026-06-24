@@ -155,68 +155,68 @@ export const ARENAS: Arena[] = [
   {
     id: 'zone-alpha',
     name: 'Zone Alpha (Core Station)',
-    width: 900,
-    height: 600,
+    width: 1200,
+    height: 800,
     obstacles: [
       // Central cross
-      { x: 410, y: 150, width: 80, height: 120 },
-      { x: 410, y: 330, width: 80, height: 120 },
-      { x: 200, y: 270, width: 150, height: 60 },
-      { x: 550, y: 270, width: 150, height: 60 },
+      { x: 560, y: 200, width: 80, height: 160 },
+      { x: 560, y: 440, width: 80, height: 160 },
+      { x: 250, y: 370, width: 220, height: 60 },
+      { x: 730, y: 370, width: 220, height: 60 },
       // Side blocks
-      { x: 100, y: 80, width: 60, height: 100 },
-      { x: 740, y: 80, width: 60, height: 100 },
-      { x: 100, y: 420, width: 60, height: 100 },
-      { x: 740, y: 420, width: 60, height: 100 }
+      { x: 150, y: 100, width: 60, height: 140 },
+      { x: 990, y: 100, width: 60, height: 140 },
+      { x: 150, y: 560, width: 60, height: 140 },
+      { x: 990, y: 560, width: 60, height: 140 }
     ],
     chargingZones: [
       { x: 40, y: 40, radius: 30, intensity: 1 },
-      { x: 860, y: 40, radius: 30, intensity: 1 },
-      { x: 40, y: 560, radius: 30, intensity: 1 },
-      { x: 860, y: 560, radius: 30, intensity: 1 }
+      { x: 1160, y: 40, radius: 30, intensity: 1 },
+      { x: 40, y: 760, radius: 30, intensity: 1 },
+      { x: 1160, y: 760, radius: 30, intensity: 1 }
     ]
   },
   {
     id: 'void-chamber',
     name: 'Void Chamber (Open Combat)',
-    width: 900,
-    height: 600,
+    width: 1200,
+    height: 800,
     obstacles: [
       // Outer ring of small columns
-      { x: 200, y: 150, width: 50, height: 50 },
-      { x: 650, y: 150, width: 50, height: 50 },
-      { x: 200, y: 400, width: 50, height: 50 },
-      { x: 650, y: 400, width: 50, height: 50 },
+      { x: 250, y: 200, width: 60, height: 60 },
+      { x: 890, y: 200, width: 60, height: 60 },
+      { x: 250, y: 540, width: 60, height: 60 },
+      { x: 890, y: 540, width: 60, height: 60 },
       // Central diamond blocks
-      { x: 425, y: 275, width: 50, height: 50 }
+      { x: 570, y: 370, width: 60, height: 60 }
     ],
     chargingZones: [
       { x: 40, y: 40, radius: 30, intensity: 1 },
-      { x: 860, y: 40, radius: 30, intensity: 1 },
-      { x: 40, y: 560, radius: 30, intensity: 1 },
-      { x: 860, y: 560, radius: 30, intensity: 1 }
+      { x: 1160, y: 40, radius: 30, intensity: 1 },
+      { x: 40, y: 760, radius: 30, intensity: 1 },
+      { x: 1160, y: 760, radius: 30, intensity: 1 }
     ]
   },
   {
     id: 'labyrinth',
     name: 'The Grid Labyrinth',
-    width: 900,
-    height: 600,
+    width: 1200,
+    height: 800,
     obstacles: [
       // Horizontal barriers
-      { x: 0, y: 180, width: 250, height: 20 },
-      { x: 650, y: 180, width: 250, height: 20 },
-      { x: 250, y: 400, width: 400, height: 20 },
+      { x: 0, y: 250, width: 350, height: 25 },
+      { x: 850, y: 250, width: 350, height: 25 },
+      { x: 350, y: 550, width: 500, height: 25 },
       // Vertical dividers
-      { x: 440, y: 50, width: 20, height: 180 },
-      { x: 200, y: 200, width: 20, height: 200 },
-      { x: 680, y: 200, width: 20, height: 200 }
+      { x: 590, y: 60, width: 20, height: 250 },
+      { x: 280, y: 275, width: 20, height: 275 },
+      { x: 900, y: 275, width: 20, height: 275 }
     ],
     chargingZones: [
       { x: 40, y: 40, radius: 30, intensity: 1 },
-      { x: 860, y: 40, radius: 30, intensity: 1 },
-      { x: 40, y: 560, radius: 30, intensity: 1 },
-      { x: 860, y: 560, radius: 30, intensity: 1 }
+      { x: 1160, y: 40, radius: 30, intensity: 1 },
+      { x: 40, y: 760, radius: 30, intensity: 1 },
+      { x: 1160, y: 760, radius: 30, intensity: 1 }
     ]
   }
 ];

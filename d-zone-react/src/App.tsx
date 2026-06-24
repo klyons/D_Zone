@@ -430,6 +430,7 @@ export const App: React.FC = () => {
           </button>
         </div>
       )}
+    </RetroMonitor>
   );
 };
 
