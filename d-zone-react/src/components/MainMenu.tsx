@@ -63,7 +63,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           <div className="setting-row">
             <span className="setting-label">ROBOT COMBATANTS:</span>
             <div className="btn-group">
-              {[1, 2, 3, 4, 5].map((num) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <button
                   key={num}
                   className={`menu-btn btn-small ${settings.robotCount === num ? 'active' : ''}`}
@@ -88,6 +88,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">TEAM MODE:</span>
+            <button
+              className={`menu-btn ${settings.teamMode ? 'active' : 'inactive-btn'}`}
+              onClick={() => onChangeSettings({ ...settings, teamMode: !settings.teamMode })}
+            >
+              {settings.teamMode ? 'ON' : 'OFF'}
+            </button>
           </div>
 
           <div className="setting-row">

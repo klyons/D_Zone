@@ -1,4 +1,4 @@
-import { Tank, Bullet, Arena, RectObstacle } from './types';
+import { Tank, Bullet, Arena, ArenaFeature, RectObstacle } from './types';
 import { TANK_RADIUS, BULLET_RADIUS } from './engine';
 
 export interface Particle {
@@ -154,7 +154,175 @@ export class CanvasRenderer {
       ctx.shadowBlur = 0;
     });
 
-    // 3. Render Obstacles (Vector style with hatch pattern)
+    // 3. Render Arena Features
+    if (arena.features) {
+      arena.features.forEach((feature) => {
+        if (feature.type === 'hazard') {
+          const pulse = 0.8 + Math.sin(timestamp * 0.003) * 0.2;
+          if (feature.width !== undefined && feature.height !== undefined) {
+            // Rect hazard - lava pool
+            const grad = ctx.createLinearGradient(feature.x, feature.y, feature.x, feature.y + feature.height);
+            const a = 0.5 * pulse;
+            grad.addColorStop(0, `rgba(255, 60, 0, ${a})`);
+            grad.addColorStop(0.5, `rgba(255, 150, 0, ${a * 0.6})`);
+            grad.addColorStop(1, `rgba(200, 30, 0, ${a * 0.3})`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(feature.x, feature.y, feature.width, feature.height);
+            // Border glow
+            ctx.strokeStyle = `rgba(255, 80, 0, ${0.6 * pulse})`;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ff4400';
+            ctx.shadowBlur = 15;
+            ctx.strokeRect(feature.x, feature.y, feature.width, feature.height);
+            ctx.shadowBlur = 0;
+            // Surface bubbles
+            if (Math.random() < 0.3) {
+              ctx.fillStyle = `rgba(255, 200, 50, ${0.4 + Math.random() * 0.3})`;
+              ctx.beginPath();
+              ctx.arc(
+                feature.x + Math.random() * feature.width,
+                feature.y + Math.random() * feature.height,
+                1 + Math.random() * 3,
+                0, Math.PI * 2
+              );
+              ctx.fill();
+            }
+          } else if (feature.radius !== undefined) {
+            // Circular hazard
+            const grad = ctx.createRadialGradient(feature.x, feature.y, 2, feature.x, feature.y, feature.radius);
+            const a = 0.45 * pulse;
+            grad.addColorStop(0, `rgba(255, 100, 0, ${a})`);
+            grad.addColorStop(0.5, `rgba(255, 60, 0, ${a * 0.5})`);
+            grad.addColorStop(1, `rgba(200, 20, 0, 0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(feature.x, feature.y, feature.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = `rgba(255, 80, 0, ${0.5 * pulse})`;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ff4400';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc(feature.x, feature.y, feature.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+          }
+        } else if (feature.type === 'speedBoost') {
+          if (feature.width !== undefined && feature.height !== undefined) {
+            ctx.save();
+            // Glowing speed lanes
+            const pulse = 0.6 + Math.sin(timestamp * 0.004) * 0.2;
+            const grad = ctx.createLinearGradient(feature.x, feature.y, feature.x + feature.width, feature.y + feature.height);
+            grad.addColorStop(0, `rgba(0, 255, 120, ${pulse * 0.15})`);
+            grad.addColorStop(0.3, `rgba(0, 255, 200, ${pulse * 0.25})`);
+            grad.addColorStop(0.5, `rgba(0, 255, 255, ${pulse * 0.3})`);
+            grad.addColorStop(0.7, `rgba(0, 255, 200, ${pulse * 0.25})`);
+            grad.addColorStop(1, `rgba(0, 255, 120, ${pulse * 0.15})`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(feature.x, feature.y, feature.width, feature.height);
+            // Directional chevron arrows
+            ctx.strokeStyle = `rgba(0, 255, 200, ${pulse * 0.4})`;
+            ctx.lineWidth = 1.5;
+            const arrowSize = 10;
+            const spacing = 80;
+            const isHorizontal = feature.width > feature.height;
+            const mainAxis = isHorizontal ? feature.width : feature.height;
+            const offset = (timestamp * 0.05) % spacing;
+            for (let i = -spacing + offset; i < mainAxis + spacing; i += spacing) {
+              const cx = isHorizontal ? feature.x + i : feature.x + feature.width / 2;
+              const cy = isHorizontal ? feature.y + feature.height / 2 : feature.y + i;
+              ctx.beginPath();
+              if (isHorizontal) {
+                ctx.moveTo(cx + arrowSize, cy);
+                ctx.lineTo(cx - arrowSize * 0.5, cy - arrowSize * 0.5);
+                ctx.moveTo(cx + arrowSize, cy);
+                ctx.lineTo(cx - arrowSize * 0.5, cy + arrowSize * 0.5);
+              } else {
+                ctx.moveTo(cx, cy + arrowSize);
+                ctx.lineTo(cx - arrowSize * 0.5, cy - arrowSize * 0.5);
+                ctx.moveTo(cx, cy + arrowSize);
+                ctx.lineTo(cx + arrowSize * 0.5, cy - arrowSize * 0.5);
+              }
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+        } else if (feature.type === 'gravityWell') {
+          if (feature.radius !== undefined) {
+            const pulse = 0.5 + Math.sin(timestamp * 0.002) * 0.2;
+            // Outer glow
+            const grad = ctx.createRadialGradient(feature.x, feature.y, 5, feature.x, feature.y, feature.radius);
+            grad.addColorStop(0, `rgba(180, 0, 255, ${pulse * 0.4})`);
+            grad.addColorStop(0.3, `rgba(120, 0, 200, ${pulse * 0.2})`);
+            grad.addColorStop(0.6, `rgba(80, 0, 150, ${pulse * 0.1})`);
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(feature.x, feature.y, feature.radius, 0, Math.PI * 2);
+            ctx.fill();
+            // Spiral arms
+            ctx.save();
+            ctx.translate(feature.x, feature.y);
+            ctx.rotate(timestamp * 0.001);
+            for (let i = 0; i < 3; i++) {
+              const armAngle = (i / 3) * Math.PI * 2;
+              ctx.strokeStyle = `rgba(200, 100, 255, ${pulse * 0.3})`;
+              ctx.lineWidth = 3;
+              ctx.shadowColor = '#aa33ff';
+              ctx.shadowBlur = 10;
+              ctx.beginPath();
+              for (let r = 5; r < feature.radius; r += 4) {
+                const a = armAngle + r * 0.02;
+                ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+              }
+              ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            // Center core
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#cc66ff';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(feature.x, feature.y, 6 + 3 * Math.sin(timestamp * 0.005), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+        } else if (feature.type === 'teleportPad') {
+          if (feature.radius !== undefined) {
+            const pulse = 0.6 + Math.sin(timestamp * 0.006) * 0.2;
+            // Portal ring
+            ctx.save();
+            ctx.translate(feature.x, feature.y);
+            ctx.rotate(timestamp * 0.002);
+            ctx.strokeStyle = `rgba(0, 200, 255, ${pulse * 0.7})`;
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = '#00ccff';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(0, 0, feature.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            // Inner ring
+            ctx.strokeStyle = `rgba(0, 255, 200, ${pulse * 0.4})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, feature.radius * 0.6, 0, Math.PI * 2);
+            ctx.stroke();
+            // Center glow
+            ctx.fillStyle = `rgba(0, 255, 255, ${pulse * 0.2})`;
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(0, 0, feature.radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.restore();
+          }
+        }
+      });
+    }
+
+    // 5. Render Obstacles (Vector style with hatch pattern)
     arena.obstacles.forEach((obstacle) => {
       // Draw dark fill
       ctx.fillStyle = '#0f1124';
@@ -183,7 +351,7 @@ export class CanvasRenderer {
       ctx.shadowBlur = 0;
     });
 
-    // 4. Render Bullets
+    // 6. Render Bullets
     bullets.forEach((bullet) => {
       ctx.shadowColor = bullet.color;
       ctx.shadowBlur = 8;
@@ -263,7 +431,7 @@ export class CanvasRenderer {
       ctx.shadowBlur = 0;
     });
 
-    // 5. Render Particles
+    // 7. Render Particles
     this.particles.forEach((p) => {
       ctx.save();
       ctx.globalAlpha = p.alpha;
@@ -277,7 +445,7 @@ export class CanvasRenderer {
     });
     ctx.shadowBlur = 0;
 
-    // 6. Render Tanks (Triangle vector shape with fuel cylinders)
+    // 8. Render Tanks (Triangle vector shape with fuel cylinders)
     tanks.forEach((tank) => {
       if (tank.isDead) return;
 
@@ -363,6 +531,17 @@ export class CanvasRenderer {
       ctx.fillRect(tank.x - barWidth / 2, tank.y - TANK_RADIUS - 16, barWidth, 4);
       ctx.fillStyle = healthColor;
       ctx.fillRect(tank.x - barWidth / 2, tank.y - TANK_RADIUS - 16, barWidth * healthPct, 4);
+
+      // Team badge
+      if (tank.team) {
+        const teamColor = tank.team === 'alpha' ? '#00ffff' : '#ff3366';
+        ctx.fillStyle = teamColor;
+        ctx.shadowColor = teamColor;
+        ctx.shadowBlur = 6;
+        ctx.font = 'bold 8px monospace';
+        ctx.fillText(`[${tank.team.toUpperCase()}]`, tank.x - 16, tank.y - TANK_RADIUS - 28);
+        ctx.shadowBlur = 0;
+      }
 
       // Text name
       ctx.fillStyle = '#ffffff';

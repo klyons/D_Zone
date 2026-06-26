@@ -25,6 +25,12 @@ export const GameHud: React.FC<GameHudProps> = ({
 
   const humanTanks = tanks.filter(t => !t.isRobot).slice(0, settings.humanPlayers);
   const aliveRobots = tanks.filter(t => t.isRobot && !t.isDead).length;
+  const alphaTeam = tanks.filter(t => t.team === 'alpha');
+  const omegaTeam = tanks.filter(t => t.team === 'omega');
+  const alphaScore = alphaTeam.reduce((s, t) => s + t.score, 0);
+  const omegaScore = omegaTeam.reduce((s, t) => s + t.score, 0);
+  const alphaAlive = alphaTeam.filter(t => !t.isDead).length;
+  const omegaAlive = omegaTeam.filter(t => !t.isDead).length;
 
   return (
     <div className="hud-container">
@@ -42,10 +48,21 @@ export const GameHud: React.FC<GameHudProps> = ({
           </span>
         </div>
 
-        <div className="hud-info-box">
-          <span className="hud-label">ROBOTS ALIVE</span>
-          <span className="hud-value text-green">{aliveRobots}</span>
-        </div>
+        {settings.teamMode ? (
+          <div className="hud-info-box">
+            <span className="hud-label">TEAMS</span>
+            <span className="hud-value">
+              <span style={{ color: '#00ffff' }}>A: {alphaAlive}</span>
+              <span style={{ margin: '0 4px', color: '#555' }}>|</span>
+              <span style={{ color: '#ff3366' }}>O: {omegaAlive}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="hud-info-box">
+            <span className="hud-label">ROBOTS ALIVE</span>
+            <span className="hud-value text-green">{aliveRobots}</span>
+          </div>
+        )}
 
         <button className="hud-quit-btn" onClick={onQuit}>
           ABORT COMBAT

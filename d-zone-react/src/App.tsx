@@ -16,7 +16,8 @@ const DEFAULT_SETTINGS: GameSettings = {
   roundLimit: 9,
   timeLimit: 90, // seconds
   soundEnabled: true,
-  arenaId: 'zone-alpha'
+  arenaId: 'zone-alpha',
+  teamMode: false
 };
 
 export const App: React.FC = () => {
@@ -104,10 +105,10 @@ export const App: React.FC = () => {
     }
 
     // Add robots
-    const robotNames = ['AGGRESSOR', 'GUARDIAN', 'PHANTOM', 'HUNTER', 'DEFENDER'];
-    const robotBehaviors: Array<Tank['robotBehavior']> = ['aggressive', 'cautious', 'ambusher', 'sniper', 'aggressive'];
-    const robotColors = ['#ff6600', '#33ff33', '#ffff33', '#cc33ff', '#ff3333'];
-    const robotHulls: Array<'scout' | 'assault' | 'dreadnought'> = ['assault', 'scout', 'dreadnought', 'assault', 'dreadnought'];
+    const robotNames = ['AGGRESSOR', 'GUARDIAN', 'PHANTOM', 'HUNTER', 'DEFENDER', 'RAVEN', 'VIPER', 'FANG', 'SPECTRE'];
+    const allBehaviors: Tank['robotBehavior'][] = ['aggressive', 'cautious', 'ambusher', 'sniper'];
+    const robotColors = ['#ff6600', '#33ff33', '#ffff33', '#cc33ff', '#ff3333', '#ff9933', '#66ff66', '#ff66ff', '#ffcc00'];
+    const robotHulls: Array<'scout' | 'assault' | 'dreadnought'> = ['assault', 'scout', 'dreadnought', 'assault', 'dreadnought', 'scout', 'assault', 'dreadnought', 'scout'];
 
     for (let i = 0; i < settings.robotCount; i++) {
       players.push(
@@ -117,9 +118,18 @@ export const App: React.FC = () => {
           robotHulls[i % robotHulls.length],
           robotColors[i % robotColors.length],
           true,
-          robotBehaviors[i % robotBehaviors.length]
+          allBehaviors[Math.floor(Math.random() * allBehaviors.length)]
         )
       );
+    }
+
+    // Assign teams in team mode
+    if (settings.teamMode) {
+      players.forEach((p, i) => {
+        if (p.id === 'p1') p.team = 'alpha';
+        else if (p.id === 'p2') p.team = 'omega';
+        else p.team = i % 2 === 0 ? 'alpha' : 'omega';
+      });
     }
 
     tanksRef.current = players;
@@ -225,16 +235,28 @@ export const App: React.FC = () => {
         rendererRef.current.render(tanksRef.current, bulletsRef.current, arena, timestamp);
       }
 
-      // Check win condition: how many tanks are left alive?
-      const aliveTanks = tanksRef.current.filter(t => !t.isDead);
-      if (aliveTanks.length === 1) {
-        // We have a winner!
-        endRound(aliveTanks[0], 'DESTRUCTION SUCCESS');
-      } else if (aliveTanks.length === 0) {
-        // Mutual destruction
-        endRound(null, 'MUTUAL ANNIHILATION');
+      // Check win condition
+      if (settings.teamMode) {
+        const alphaAlive = tanksRef.current.filter(t => t.team === 'alpha' && !t.isDead);
+        const omegaAlive = tanksRef.current.filter(t => t.team === 'omega' && !t.isDead);
+        if (alphaAlive.length === 0 && omegaAlive.length === 0) {
+          endRound(null, 'MUTUAL ANNIHILATION');
+        } else if (alphaAlive.length === 0) {
+          endRound(omegaAlive[0], 'TEAM OMEGA VICTORY');
+        } else if (omegaAlive.length === 0) {
+          endRound(alphaAlive[0], 'TEAM ALPHA VICTORY');
+        } else {
+          animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+        }
       } else {
-        animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+        const aliveTanks = tanksRef.current.filter(t => !t.isDead);
+        if (aliveTanks.length === 1) {
+          endRound(aliveTanks[0], 'DESTRUCTION SUCCESS');
+        } else if (aliveTanks.length === 0) {
+          endRound(null, 'MUTUAL ANNIHILATION');
+        } else {
+          animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+        }
       }
     };
 
@@ -257,10 +279,19 @@ export const App: React.FC = () => {
     setRoundWinner(winner);
     setGameState('round_over');
 
-    // Reward winner
+    // Reward winner (and their team in team mode)
     if (winner) {
-      winner.score += 200;
-      winner.money += 120;
+      if (settings.teamMode) {
+        tanksRef.current.forEach((t) => {
+          if (t.team === winner.team && !t.isDead) {
+            t.score += 150;
+            t.money += 80;
+          }
+        });
+      } else {
+        winner.score += 200;
+        winner.money += 120;
+      }
     }
 
     // Award cash to all other alive/active players based on survival/performance
@@ -302,6 +333,13 @@ export const App: React.FC = () => {
 
   // Determine overall champion
   const getOverallWinner = () => {
+    if (settings.teamMode) {
+      const alphaTotal = tanksRef.current.filter(t => t.team === 'alpha').reduce((s, t) => s + t.score, 0);
+      const omegaTotal = tanksRef.current.filter(t => t.team === 'omega').reduce((s, t) => s + t.score, 0);
+      return alphaTotal >= omegaTotal
+        ? tanksRef.current.find(t => t.team === 'alpha')
+        : tanksRef.current.find(t => t.team === 'omega');
+    }
     let champion = tanksRef.current[0];
     tanksRef.current.forEach(t => {
       if (t.score > champion.score) {
@@ -348,10 +386,14 @@ export const App: React.FC = () => {
           <div className="overlay-content">
             {roundWinner ? (
               <div>
-                <p className="winner-announcement" style={{ color: roundWinner.color }}>
-                  {roundWinner.name} WINS THE COMBAT!
+                <p className="winner-announcement" style={{ color: settings.teamMode ? '#ffffff' : roundWinner.color }}>
+                  {settings.teamMode
+                    ? `TEAM ${roundWinner.team?.toUpperCase()} VICTORY!`
+                    : `${roundWinner.name} WINS THE COMBAT!`}
                 </p>
-                <p className="reward-text">+200 PTS | +$120 CREDITS AWARDED</p>
+                <p className="reward-text">
+                  {settings.teamMode ? 'ALL SURVIVING TEAM MEMBERS REWARDED' : '+200 PTS | +$120 CREDITS AWARDED'}
+                </p>
               </div>
             ) : (
               <p className="winner-announcement text-orange">MUTUAL ANNIHILATION</p>
@@ -360,6 +402,7 @@ export const App: React.FC = () => {
             <table className="scoreboard">
               <thead>
                 <tr>
+                  {settings.teamMode && <th>TEAM</th>}
                   <th>CLASSIFICATION</th>
                   <th>SCORE</th>
                   <th>CREDITS</th>
@@ -369,6 +412,11 @@ export const App: React.FC = () => {
               <tbody>
                 {tanksRef.current.map((tank) => (
                   <tr key={tank.id} style={{ color: tank.color }}>
+                    {settings.teamMode && (
+                      <td style={{ color: tank.team === 'alpha' ? '#00ffff' : '#ff3366' }}>
+                        {tank.team?.toUpperCase()}
+                      </td>
+                    )}
                     <td>{tank.name}</td>
                     <td>{tank.score}</td>
                     <td>${tank.money}</td>
@@ -398,14 +446,21 @@ export const App: React.FC = () => {
           <h2 className="overlay-title glowing-cyan">SIMULATION OVER</h2>
           
           <div className="overlay-content">
-            <p className="champion-announcement" style={{ color: getOverallWinner()?.color }}>
-              CHAMPION: {getOverallWinner()?.name}
+            <p className="champion-announcement" style={{ color: settings.teamMode ? '#ffffff' : getOverallWinner()?.color }}>
+              {settings.teamMode
+                ? `TEAM ${getOverallWinner()?.team?.toUpperCase()} CHAMPIONS!`
+                : `CHAMPION: ${getOverallWinner()?.name}`}
             </p>
-            <p className="final-score">FINAL SCORE: {getOverallWinner()?.score} PTS</p>
+            <p className="final-score">
+              {settings.teamMode
+                ? `ALPHA: ${tanksRef.current.filter(t => t.team === 'alpha').reduce((s, t) => s + t.score, 0)} PTS  |  OMEGA: ${tanksRef.current.filter(t => t.team === 'omega').reduce((s, t) => s + t.score, 0)} PTS`
+                : `FINAL SCORE: ${getOverallWinner()?.score} PTS`}
+            </p>
             
             <table className="scoreboard">
               <thead>
                 <tr>
+                  {settings.teamMode && <th>TEAM</th>}
                   <th>PILOT</th>
                   <th>SCORE</th>
                   <th>CREDITS</th>
@@ -415,6 +470,11 @@ export const App: React.FC = () => {
               <tbody>
                 {tanksRef.current.map((tank) => (
                   <tr key={tank.id} style={{ color: tank.color }}>
+                    {settings.teamMode && (
+                      <td style={{ color: tank.team === 'alpha' ? '#00ffff' : '#ff3366' }}>
+                        {tank.team?.toUpperCase()}
+                      </td>
+                    )}
                     <td>{tank.name}</td>
                     <td>{tank.score}</td>
                     <td>${tank.money}</td>

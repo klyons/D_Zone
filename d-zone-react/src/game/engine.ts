@@ -1,4 +1,4 @@
-import { Tank, Bullet, Arena, RectObstacle, GameSettings } from './types';
+import { Tank, Bullet, Arena, ArenaFeature, RectObstacle, GameSettings } from './types';
 import { TANK_DEFS, createDefaultTank } from './constants';
 import { sound } from './sound';
 
@@ -98,6 +98,7 @@ export function updateGameFrame(
   timestamp: number
 ): { tanks: Tank[]; bullets: Bullet[]; particleSpawns: Array<{ x: number, y: number, color: string, speed: number }> } {
   const particleSpawns: Array<{ x: number, y: number, color: string, speed: number }> = [];
+  const teleportedThisFrame = new Set<string>();
 
   // 1. Update Tanks
   tanks.forEach((tank) => {
@@ -149,6 +150,7 @@ export function updateGameFrame(
       let closestDist = Infinity;
       tanks.forEach((other) => {
         if (other.id === tank.id || other.isDead) return;
+        if (settings.teamMode && tank.team && other.team === tank.team) return;
         const dist = Math.sqrt((other.x - tank.x) ** 2 + (other.y - tank.y) ** 2);
         if (dist < closestDist) {
           closestDist = dist;
@@ -240,6 +242,80 @@ export function updateGameFrame(
       } else {
         forward = Math.random() < 0.5;
       }
+
+      // Hazard avoidance for AI tanks
+      if (tank.isRobot && arena.features) {
+        let hazardPushX = 0;
+        let hazardPushY = 0;
+        let inDanger = false;
+
+        for (const feature of arena.features) {
+          if (feature.type !== 'hazard') continue;
+          let dist: number, cx: number, cy: number;
+          if (feature.width !== undefined && feature.height !== undefined) {
+            cx = clamp(tank.x, feature.x, feature.x + feature.width);
+            cy = clamp(tank.y, feature.y, feature.y + feature.height);
+            dist = Math.sqrt((tank.x - cx) ** 2 + (tank.y - cy) ** 2);
+          } else if (feature.radius !== undefined) {
+            cx = feature.x;
+            cy = feature.y;
+            dist = Math.sqrt((tank.x - cx) ** 2 + (tank.y - cy) ** 2);
+          } else continue;
+          if (dist < TANK_RADIUS + 5) {
+            inDanger = true;
+            if (dist > 0.1) {
+              hazardPushX += (tank.x - cx) / dist * 300;
+              hazardPushY += (tank.y - cy) / dist * 300;
+            }
+          } else {
+            const hazardSize = feature.radius !== undefined ? feature.radius : Math.max(feature.width || 0, feature.height || 0);
+            const dangerRange = hazardSize + 60;
+            if (dist < dangerRange) {
+              inDanger = true;
+              const strength = 1 - (dist - hazardSize) / 60;
+              if (dist > 0.1) {
+                hazardPushX += (tank.x - cx) / dist * strength * 100;
+                hazardPushY += (tank.y - cy) / dist * strength * 100;
+              }
+            }
+          }
+        }
+        if (inDanger) {
+          const escapeTargetX = clamp(tank.x + hazardPushX, 50, arena.width - 50);
+          const escapeTargetY = clamp(tank.y + hazardPushY, 50, arena.height - 50);
+          const escapeAngle = Math.atan2(escapeTargetY - tank.y, escapeTargetX - tank.x);
+          let escapeDiff = escapeAngle - tank.angle;
+          while (escapeDiff < -Math.PI) escapeDiff += Math.PI * 2;
+          while (escapeDiff > Math.PI) escapeDiff -= Math.PI * 2;
+          if (Math.abs(escapeDiff) > 0.05) {
+            if (escapeDiff > 0) { turnRight = true; turnLeft = false; }
+            else { turnLeft = true; turnRight = false; }
+          }
+          forward = true;
+          backward = false;
+        }
+        if (!inDanger) {
+          const lookDist = 40;
+          const aheadX = tank.x + Math.cos(tank.angle) * lookDist;
+          const aheadY = tank.y + Math.sin(tank.angle) * lookDist;
+          let hazardAhead = false;
+          for (const feature of arena.features) {
+            if (feature.type !== 'hazard') continue;
+            if (feature.width !== undefined && feature.height !== undefined) {
+              const cx = clamp(aheadX, feature.x, feature.x + feature.width);
+              const cy = clamp(aheadY, feature.y, feature.y + feature.height);
+              if (Math.sqrt((aheadX - cx) ** 2 + (aheadY - cy) ** 2) < TANK_RADIUS) {
+                hazardAhead = true; break;
+              }
+            } else if (feature.radius !== undefined) {
+              if (Math.sqrt((aheadX - feature.x) ** 2 + (aheadY - feature.y) ** 2) < feature.radius + TANK_RADIUS) {
+                hazardAhead = true; break;
+              }
+            }
+          }
+          if (hazardAhead) forward = false;
+        }
+      }
     }
 
     // Apply rotation
@@ -286,6 +362,99 @@ export function updateGameFrame(
     arena.obstacles.forEach((obstacle) => {
       resolveTankObstacleCollision(tank, obstacle);
     });
+
+    // Arena unique features
+    if (arena.features) {
+      arena.features.forEach((feature) => {
+        if (feature.type === 'hazard') {
+          let inHazard = false;
+          if (feature.width !== undefined && feature.height !== undefined) {
+            // Rect hazard
+            const cx = clamp(tank.x, feature.x, feature.x + feature.width);
+            const cy = clamp(tank.y, feature.y, feature.y + feature.height);
+            const d = Math.sqrt((tank.x - cx) ** 2 + (tank.y - cy) ** 2);
+            if (d < TANK_RADIUS) inHazard = true;
+          } else if (feature.radius !== undefined) {
+            // Circular hazard
+            const dx = tank.x - feature.x;
+            const dy = tank.y - feature.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < feature.radius + TANK_RADIUS) inHazard = true;
+          }
+          if (inHazard) {
+            const dmg = feature.damage || 1;
+            tank.health = Math.max(0, tank.health - dmg);
+            if (Math.random() < 0.1) {
+              particleSpawns.push({ x: tank.x + (Math.random() - 0.5) * 10, y: tank.y + (Math.random() - 0.5) * 10, color: '#ff4400', speed: 1 });
+            }
+            if (tank.health <= 0 && !tank.isDead) {
+              tank.isDead = true;
+              sound.playExplosion();
+              particleSpawns.push({ x: tank.x, y: tank.y, color: '#ff4400', speed: 5 });
+              particleSpawns.push({ x: tank.x, y: tank.y, color: '#ffcc00', speed: 4 });
+            }
+          }
+        } else if (feature.type === 'speedBoost') {
+          if (feature.width !== undefined && feature.height !== undefined) {
+            const cx = clamp(tank.x, feature.x, feature.x + feature.width);
+            const cy = clamp(tank.y, feature.y, feature.y + feature.height);
+            const d = Math.sqrt((tank.x - cx) ** 2 + (tank.y - cy) ** 2);
+            if (d < TANK_RADIUS) {
+              const mult = feature.multiplier || 1.5;
+              // Apply speed boost by scaling velocity
+              tank.vx *= 1 + (mult - 1) * 0.15;
+              tank.vy *= 1 + (mult - 1) * 0.15;
+              if (Math.random() < 0.2) {
+                particleSpawns.push({ x: tank.x, y: tank.y, color: '#33ff99', speed: 0.5 });
+              }
+            }
+          }
+        } else if (feature.type === 'gravityWell') {
+          if (feature.radius !== undefined) {
+            const dx = feature.x - tank.x;
+            const dy = feature.y - tank.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < feature.radius && dist > 0) {
+              const strength = feature.strength || 0.05;
+              const pullForce = strength * (1 - dist / feature.radius);
+              tank.vx += (dx / dist) * pullForce;
+              tank.vy += (dy / dist) * pullForce;
+            }
+          }
+        } else if (feature.type === 'teleportPad') {
+          if (feature.radius !== undefined && feature.targetX !== undefined && feature.targetY !== undefined) {
+            const dx = tank.x - feature.x;
+            const dy = tank.y - feature.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < feature.radius + TANK_RADIUS) {
+              if (!teleportedThisFrame.has(tank.id)) {
+                teleportedThisFrame.add(tank.id);
+                // Safety check - verify target position is not inside obstacles
+                let safe = true;
+                const tx = feature.targetX;
+                const ty = feature.targetY;
+                if (tx < TANK_RADIUS || tx > arena.width - TANK_RADIUS || ty < TANK_RADIUS || ty > arena.height - TANK_RADIUS) {
+                  safe = false;
+                }
+                for (const ob of arena.obstacles) {
+                  const cx = clamp(tx, ob.x, ob.x + ob.width);
+                  const cy = clamp(ty, ob.y, ob.y + ob.height);
+                  const d = Math.sqrt((tx - cx) ** 2 + (ty - cy) ** 2);
+                  if (d < TANK_RADIUS) { safe = false; break; }
+                }
+                if (safe) {
+                  tank.x = tx;
+                  tank.y = ty;
+                  particleSpawns.push({ x: feature.x, y: feature.y, color: '#33ccff', speed: 3 });
+                  particleSpawns.push({ x: tx, y: ty, color: '#33ccff', speed: 3 });
+                  sound.playTeleport();
+                }
+              }
+            }
+          }
+        }
+      });
+    }
 
     // Recharging zones logic
     let isRecharging = false;
@@ -503,8 +672,10 @@ export function updateGameFrame(
       }
 
       // Check proximity of other tanks
+      const mineOwner = tanks.find(t => t.id === bullet.ownerId);
       tanks.forEach((tank) => {
         if (tank.isDead || tank.id === bullet.ownerId) return;
+        if (settings.teamMode && mineOwner && mineOwner.team && tank.team === mineOwner.team) return;
         const dist = Math.sqrt((tank.x - bullet.x) ** 2 + (tank.y - bullet.y) ** 2);
         if (dist < 26) {
           exploded = true;
@@ -539,8 +710,10 @@ export function updateGameFrame(
     if (bullet.type === 'seeker') {
       let target: Tank | null = null;
       let minDist = Infinity;
+      const seekerOwner = tanks.find(t => t.id === bullet.ownerId);
       tanks.forEach((tank) => {
         if (tank.isDead || tank.id === bullet.ownerId) return;
+        if (settings.teamMode && seekerOwner && seekerOwner.team && tank.team === seekerOwner.team) return;
         const d = Math.sqrt((tank.x - bullet.x) ** 2 + (tank.y - bullet.y) ** 2);
         if (d < minDist) {
           minDist = d;
@@ -621,8 +794,10 @@ export function updateGameFrame(
 
     // Bullet vs Tank collision
     let hitTank = false;
+    const bulletOwner = tanks.find(t => t.id === bullet.ownerId);
     for (const tank of tanks) {
       if (tank.isDead || tank.id === bullet.ownerId) continue;
+      if (settings.teamMode && bulletOwner && bulletOwner.team && tank.team === bulletOwner.team) continue;
 
       const dist = Math.sqrt((tank.x - bullet.x) ** 2 + (tank.y - bullet.y) ** 2);
       if (dist < TANK_RADIUS + bullet.radius) {

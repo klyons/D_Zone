@@ -57,6 +57,7 @@ export interface Tank {
   shieldActive: boolean;
   shieldDuration: number; // ms
   lastFired: number; // timestamp
+  team?: 'alpha' | 'omega';
 }
 
 export interface Bullet {
@@ -98,6 +99,21 @@ export interface ChargingZone {
   intensity: number; // for visual pulse
 }
 
+export interface ArenaFeature {
+  type: 'hazard' | 'speedBoost' | 'gravityWell' | 'teleportPad';
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  radius?: number;
+  damage?: number;
+  multiplier?: number;
+  strength?: number;
+  targetX?: number;
+  targetY?: number;
+  targetId?: string;
+}
+
 export interface Arena {
   id: string;
   name: string;
@@ -105,6 +121,7 @@ export interface Arena {
   height: number;
   obstacles: RectObstacle[];
   chargingZones: ChargingZone[];
+  features?: ArenaFeature[];
 }
 
 export interface GameSettings {
@@ -114,4 +131,5 @@ export interface GameSettings {
   timeLimit: number; // in seconds
   soundEnabled: boolean;
   arenaId: string;
+  teamMode: boolean;
 }
