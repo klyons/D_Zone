@@ -4,7 +4,8 @@ import { MainMenu } from './components/MainMenu';
 import { Shop } from './components/Shop';
 import { GameHud } from './components/GameHud';
 import { Tank, Bullet, GameSettings, Arena } from './game/types';
-import { ARENAS, createDefaultTank } from './game/constants';
+import { ARENAS, createDefaultTank, ROBOT_PILOTS } from './game/constants';
+
 import { updateGameFrame, arrangeTanksAtSpawns } from './game/engine';
 import { CanvasRenderer } from './game/renderer';
 import { sound } from './game/sound';
@@ -105,20 +106,16 @@ export const App: React.FC = () => {
     }
 
     // Add robots
-    const robotNames = ['AGGRESSOR', 'GUARDIAN', 'PHANTOM', 'HUNTER', 'DEFENDER', 'RAVEN', 'VIPER', 'FANG', 'SPECTRE'];
-    const allBehaviors: Tank['robotBehavior'][] = ['aggressive', 'cautious', 'ambusher', 'sniper'];
-    const robotColors = ['#ff6600', '#33ff33', '#ffff33', '#cc33ff', '#ff3333', '#ff9933', '#66ff66', '#ff66ff', '#ffcc00'];
-    const robotHulls: Array<'scout' | 'assault' | 'dreadnought'> = ['assault', 'scout', 'dreadnought', 'assault', 'dreadnought', 'scout', 'assault', 'dreadnought', 'scout'];
-
     for (let i = 0; i < settings.robotCount; i++) {
+      const pilot = ROBOT_PILOTS[i % ROBOT_PILOTS.length];
       players.push(
         createDefaultTank(
           `r${i}`,
-          robotNames[i % robotNames.length],
-          robotHulls[i % robotHulls.length],
-          robotColors[i % robotColors.length],
+          pilot.name,
+          pilot.type,
+          pilot.color,
           true,
-          allBehaviors[Math.floor(Math.random() * allBehaviors.length)]
+          pilot.behavior
         )
       );
     }

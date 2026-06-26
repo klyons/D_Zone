@@ -133,3 +133,11 @@ export interface GameSettings {
   arenaId: string;
   teamMode: boolean;
 }
+
+export interface RobotPilot {
+  name: string;
+  behavior: 'aggressive' | 'cautious' | 'ambusher' | 'sniper';
+  color: string;
+  type: TankType;
+}
+

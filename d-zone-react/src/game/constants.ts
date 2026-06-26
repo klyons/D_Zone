@@ -1,4 +1,5 @@
-import { Weapon, Tool, Tank, Arena, TankType } from './types';
+import { Weapon, Tool, Tank, Arena, TankType, RobotPilot } from './types';
+
 
 export const WEAPON_DEFS: Weapon[] = [
   {
@@ -355,6 +356,18 @@ export const ARENAS: Arena[] = [
       { type: 'teleportPad', x: 600, y: 850, radius: 25, targetX: 1400, targetY: 250 },
     ]
   }
+];
+
+export const ROBOT_PILOTS: RobotPilot[] = [
+  { name: 'AGGRESSOR', behavior: 'aggressive', color: '#ff003c', type: 'assault' },
+  { name: 'GUARDIAN', behavior: 'cautious', color: '#00ff3c', type: 'dreadnought' },
+  { name: 'PHANTOM', behavior: 'ambusher', color: '#7f00ff', type: 'scout' },
+  { name: 'HUNTER', behavior: 'aggressive', color: '#ff5a00', type: 'scout' },
+  { name: 'DEFENDER', behavior: 'cautious', color: '#e0e0e0', type: 'dreadnought' },
+  { name: 'RAVEN', behavior: 'sniper', color: '#0066ff', type: 'assault' },
+  { name: 'VIPER', behavior: 'ambusher', color: '#ff00b4', type: 'scout' },
+  { name: 'FANG', behavior: 'aggressive', color: '#ffe600', type: 'assault' },
+  { name: 'SPECTRE', behavior: 'sniper', color: '#b2ff00', type: 'dreadnought' }
 ];
 
 export function createDefaultTank(

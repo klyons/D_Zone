@@ -453,46 +453,119 @@ export class CanvasRenderer {
       ctx.translate(tank.x, tank.y);
       ctx.rotate(tank.angle);
 
-      // Base vector tank design (isosceles triangle)
+      // Base vector tank design differentiated by type (Scout, Assault, Dreadnought)
       const color = tank.color;
       ctx.shadowColor = color;
       ctx.shadowBlur = 8;
       
+      // Base size scaling for drawing
+      let r = TANK_RADIUS;
+      if (tank.type === 'scout') r = TANK_RADIUS * 0.85;
+      else if (tank.type === 'dreadnought') r = TANK_RADIUS * 1.25;
+
       // Draw outer hull
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = tank.type === 'dreadnought' ? 3.5 : 2.5; // Thicker lines for dreadnought
       ctx.beginPath();
-      ctx.moveTo(TANK_RADIUS, 0); // Nose
-      ctx.lineTo(-TANK_RADIUS + 4, -TANK_RADIUS + 5); // Back left
-      ctx.lineTo(-TANK_RADIUS + 8, 0); // Back indent
-      ctx.lineTo(-TANK_RADIUS + 4, TANK_RADIUS - 5); // Back right
+
+      if (tank.type === 'scout') {
+        // Sleek needle nose with swept back wings
+        ctx.moveTo(r + 3, 0); // Extended nose
+        ctx.lineTo(-r + 1, -r + 2); // Left wing tip
+        ctx.lineTo(-r + 6, -2); // Left inner indent
+        ctx.lineTo(-r + 6, 2); // Right inner indent
+        ctx.lineTo(-r + 1, r - 2); // Right wing tip
+      } else if (tank.type === 'dreadnought') {
+        // Bulky, armored octagon battleship shape
+        ctx.moveTo(r, -4); // Flat nose top
+        ctx.lineTo(r, 4); // Flat nose bottom
+        ctx.lineTo(r - 6, r); // Heavy front shoulder
+        ctx.lineTo(-r + 2, r); // Heavy side
+        ctx.lineTo(-r + 2, -r); // Heavy back corner
+        ctx.lineTo(r - 6, -r); // Heavy front shoulder
+      } else {
+        // Assault: Classic balanced delta wing with back indent
+        ctx.moveTo(r, 0); // Nose
+        ctx.lineTo(-r + 4, -r + 5); // Back left
+        ctx.lineTo(-r + 8, 0); // Back indent
+        ctx.lineTo(-r + 4, r - 5); // Back right
+      }
       ctx.closePath();
       ctx.stroke();
 
       // Highlight core
-      ctx.fillStyle = 'rgba(10, 10, 20, 0.8)';
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.85)';
       ctx.fill();
 
+      // Draw class-specific internal detail lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      if (tank.type === 'scout') {
+        // Sleek spine line
+        ctx.moveTo(-r + 8, 0);
+        ctx.lineTo(r - 2, 0);
+      } else if (tank.type === 'dreadnought') {
+        // Armor plating division lines
+        ctx.moveTo(-r + 6, -r + 4);
+        ctx.lineTo(r - 10, 0);
+        ctx.lineTo(-r + 6, r - 4);
+        ctx.moveTo(-r + 6, 0);
+        ctx.lineTo(r - 6, 0);
+      } else {
+        // Assault: Cockpit lines
+        ctx.moveTo(-r + 8, -3);
+        ctx.lineTo(r - 6, 0);
+        ctx.lineTo(-r + 8, 3);
+      }
+      ctx.stroke();
+
       // Render interior fuel cylinders (glowing lines/boxes on the back)
-      // Visual indicator of weapon fuel! (Glowing colored radioactive liquid)
       const fuelPct = tank.fuel / tank.maxFuel;
       const fuelColor = tank.fuel < 30 ? '#ff0000' : color;
       ctx.fillStyle = fuelColor;
       ctx.shadowColor = fuelColor;
       ctx.shadowBlur = 6;
       
-      // Draw 2 cylinder bars on the back
-      const barH = 5;
-      const barW = 10 * fuelPct;
-      ctx.fillRect(-12, -7, barW, barH);
-      ctx.fillRect(-12, 2, barW, barH);
+      if (tank.type === 'scout') {
+        // Scout: Single central sleek fuel core
+        const barH = 3;
+        const barW = 12 * fuelPct;
+        ctx.fillRect(-12, -1.5, barW, barH);
+      } else if (tank.type === 'dreadnought') {
+        // Dreadnought: Massive triple energy reactor blocks
+        const barH = 4;
+        const barW = 8 * fuelPct;
+        ctx.fillRect(-r + 4, -8, barW, barH);
+        ctx.fillRect(-r + 4, -2, barW, barH);
+        ctx.fillRect(-r + 4, 4, barW, barH);
+      } else {
+        // Assault: Classic double cylinders
+        const barH = 5;
+        const barW = 10 * fuelPct;
+        ctx.fillRect(-12, -7, barW, barH);
+        ctx.fillRect(-12, 2, barW, barH);
+      }
 
       // Draw tank turret pointer
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = tank.type === 'dreadnought' ? 2.5 : 1.5; // Thicker turret for dreadnought
       ctx.beginPath();
-      ctx.moveTo(2, 0);
-      ctx.lineTo(TANK_RADIUS + 3, 0);
+      if (tank.type === 'dreadnought') {
+        // Twin-barrel look for Dreadnought!
+        ctx.moveTo(2, -3);
+        ctx.lineTo(r + 3, -3);
+        ctx.moveTo(2, 3);
+        ctx.lineTo(r + 3, 3);
+      } else if (tank.type === 'scout') {
+        // Sleek single antenna pointer
+        ctx.moveTo(2, 0);
+        ctx.lineTo(r + 5, 0);
+      } else {
+        // Standard single turret pointer
+        ctx.moveTo(2, 0);
+        ctx.lineTo(r + 3, 0);
+      }
       ctx.stroke();
 
       ctx.restore();
