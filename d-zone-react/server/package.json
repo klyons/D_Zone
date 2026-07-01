@@ -1,0 +1,20 @@
+{
+  "name": "d-zone-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.19.4",
+    "typescript": "~6.0.2"
+  }
+}

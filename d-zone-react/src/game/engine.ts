@@ -316,6 +316,46 @@ export function updateGameFrame(
           if (hazardAhead) forward = false;
         }
       }
+
+      // Obstacle avoidance for AI tanks
+      if (tank.isRobot) {
+        let wallClose = false;
+        let wallPushX = 0;
+        let wallPushY = 0;
+        for (const obstacle of arena.obstacles) {
+          const cx = clamp(tank.x, obstacle.x, obstacle.x + obstacle.width);
+          const cy = clamp(tank.y, obstacle.y, obstacle.y + obstacle.height);
+          const dist = Math.sqrt((tank.x - cx) ** 2 + (tank.y - cy) ** 2);
+          const wallDanger = TANK_RADIUS + 45;
+          if (dist < wallDanger) {
+            wallClose = true;
+            if (dist > 0.1) {
+              wallPushX += (tank.x - cx) / dist * (wallDanger - dist);
+              wallPushY += (tank.y - cy) / dist * (wallDanger - dist);
+            }
+          }
+        }
+        if (wallClose) {
+          const steerAngle = Math.atan2(wallPushY, wallPushX);
+          let steerDiff = steerAngle - tank.angle;
+          while (steerDiff < -Math.PI) steerDiff += Math.PI * 2;
+          while (steerDiff > Math.PI) steerDiff -= Math.PI * 2;
+          if (Math.abs(steerDiff) > 0.05) {
+            if (steerDiff > 0) { turnRight = true; turnLeft = false; }
+            else { turnLeft = true; turnRight = false; }
+          }
+        }
+        // Stuck detection: low speed while trying to move forward -> random steer
+        const speed = Math.sqrt(tank.vx * tank.vx + tank.vy * tank.vy);
+        if (forward && speed < 0.5) {
+          if (Math.random() < 0.03) {
+            if (Math.random() < 0.5) turnLeft = true;
+            else turnRight = true;
+            forward = false;
+            if (Math.random() < 0.5) backward = true;
+          }
+        }
+      }
     }
 
     // Apply rotation
@@ -850,11 +890,11 @@ export function arrangeTanksAtSpawns(tanks: Tank[], arena: Arena) {
 
   tanks.forEach((tank, idx) => {
     const pos = positions[idx % positions.length];
-    tank.x = pos.x;
-    tank.y = pos.y;
+    tank.x = pos.x + (Math.random() - 0.5) * 60;
+    tank.y = pos.y + (Math.random() - 0.5) * 60;
     tank.vx = 0;
     tank.vy = 0;
-    tank.angle = pos.angle;
+    tank.angle = pos.angle + (Math.random() - 0.5) * Math.PI;
     tank.health = tank.maxHealth;
     tank.fuel = tank.maxFuel;
     tank.isDead = false;

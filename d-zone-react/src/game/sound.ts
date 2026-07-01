@@ -1,12 +1,14 @@
 class SoundManager {
-  private ctx: AudioContext | null = null;
+  private ctx: any = null;
   private enabled = true;
-  private sequencerIntervalId: number | null = null;
+  private sequencerIntervalId: ReturnType<typeof setInterval> | null = null;
 
   init() {
     if (this.ctx) return;
     try {
-      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AC = (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
     } catch (e) {
       console.warn('Web Audio API not supported', e);
     }
@@ -257,7 +259,7 @@ class SoundManager {
     };
 
     // Run sequencer at 130 BPM (approx 230ms per step)
-    this.sequencerIntervalId = window.setInterval(playStep, 230);
+    this.sequencerIntervalId = setInterval(playStep, 230) as unknown as ReturnType<typeof setInterval>;
   }
 
   private playHiHat() {
